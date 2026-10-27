@@ -24,10 +24,13 @@ export default {
         accent: '#fb7185',
         cream: '#f7f0e6',
         surface: '#f3ebdd',
+        brandRed: '#690000',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
         serif: ['Fraunces', 'Georgia', 'serif'],
+        script: ['"Alex Brush"', 'cursive'],
+        display: ['"Bebas Neue"', 'sans-serif'],
       },
       animation: {
         fadeIn: 'fadeIn 0.5s ease-in',

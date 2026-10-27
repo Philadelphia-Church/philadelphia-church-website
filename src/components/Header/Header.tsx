@@ -50,8 +50,13 @@ export default function Header() {
               alt="Philadelphia Church"
               className="h-12 md:h-14"
             />
-            <span className="text-xl md:text-2xl font-bold text-primary-600 hidden sm:inline">
-              Philadelphia Church
+            <span className="hidden sm:flex flex-col leading-none">
+              <span className="font-script text-3xl md:text-4xl leading-none text-brandRed">
+                Philadelphia Church
+              </span>
+              <span className="font-display text-sm md:text-base tracking-[0.15em] text-secondary-700">
+                Rooted in Christ&apos;s Love
+              </span>
             </span>
           </Link>
 
