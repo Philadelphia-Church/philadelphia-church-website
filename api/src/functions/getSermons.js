@@ -24,7 +24,10 @@ app.http('getSermons', {
       url.searchParams.set('key', apiKey);
 
       const response = await fetch(url);
-      if (!response.ok) throw new Error(`YouTube API returned ${response.status}`);
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`YouTube API returned ${response.status}: ${body}`);
+      }
 
       const data = await response.json();
       const sermons = (data.items || [])
@@ -43,7 +46,8 @@ app.http('getSermons', {
       };
     } catch (err) {
       context.error('Failed to fetch sermons from YouTube API:', err);
-      return { status: 502, jsonBody: { error: 'Failed to fetch latest sermons' } };
+      // TEMPORARY: surfacing err.message for live debugging, revert to a generic message once fixed.
+      return { status: 502, jsonBody: { error: 'Failed to fetch latest sermons', detail: err.message } };
     }
   },
 });
