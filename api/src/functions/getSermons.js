@@ -1,44 +1,40 @@
 const { app } = require('@azure/functions');
 
 const CHANNEL_ID = 'UCGBlzLVOerd5-0Gyu1Vx7Ew';
-const FEED_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`;
+// Every channel's "uploads" playlist ID is its channel ID with the UC prefix swapped for UU.
+const UPLOADS_PLAYLIST_ID = `UU${CHANNEL_ID.slice(2)}`;
 const MAX_SERMONS = 10;
-
-function unescapeXml(text) {
-  return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'");
-}
-
-function parseSermons(xml) {
-  const entries = xml.split('<entry>').slice(1);
-  return entries
-    .map((entry) => {
-      const videoId = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1];
-      const title = entry.match(/<title>([^<]*)<\/title>/)?.[1];
-      if (!videoId || !title) return null;
-      return { videoId, title: unescapeXml(title) };
-    })
-    .filter(Boolean)
-    .slice(0, MAX_SERMONS);
-}
 
 app.http('getSermons', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'sermons',
   handler: async (_request, context) => {
-    try {
-      const response = await fetch(FEED_URL);
-      if (!response.ok) throw new Error(`YouTube feed returned ${response.status}`);
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (!apiKey) {
+      context.error('YOUTUBE_API_KEY is not configured');
+      return { status: 500, jsonBody: { error: 'Sermons API is not configured' } };
+    }
 
-      const xml = await response.text();
-      const sermons = parseSermons(xml);
-      if (sermons.length === 0) throw new Error('No sermons found in feed');
+    try {
+      const url = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
+      url.searchParams.set('part', 'snippet');
+      url.searchParams.set('playlistId', UPLOADS_PLAYLIST_ID);
+      url.searchParams.set('maxResults', String(MAX_SERMONS));
+      url.searchParams.set('key', apiKey);
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`YouTube API returned ${response.status}`);
+
+      const data = await response.json();
+      const sermons = (data.items || [])
+        .map((item) => ({
+          videoId: item.snippet?.resourceId?.videoId,
+          title: item.snippet?.title,
+        }))
+        .filter((sermon) => sermon.videoId && sermon.title);
+
+      if (sermons.length === 0) throw new Error('No sermons found');
 
       return {
         status: 200,
@@ -46,7 +42,7 @@ app.http('getSermons', {
         jsonBody: { sermons },
       };
     } catch (err) {
-      context.error('Failed to fetch sermons feed:', err);
+      context.error('Failed to fetch sermons from YouTube API:', err);
       return { status: 502, jsonBody: { error: 'Failed to fetch latest sermons' } };
     }
   },
