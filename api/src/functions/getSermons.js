@@ -46,8 +46,7 @@ app.http('getSermons', {
       };
     } catch (err) {
       context.error('Failed to fetch sermons from YouTube API:', err);
-      // TEMPORARY: surfacing err.message for live debugging, revert to a generic message once fixed.
-      return { status: 502, jsonBody: { error: 'Failed to fetch latest sermons', detail: err.message } };
+      return { status: 502, jsonBody: { error: 'Failed to fetch latest sermons' } };
     }
   },
 });
